@@ -31,12 +31,20 @@ async function run() {
 
         const menuCollection = client.db("DishDash-Restaurant").collection("menu");
         const reviewsCollection = client.db("DishDash-Restaurant").collection("reviews");
+        const cartCollection = client.db("DishDash-Restaurant").collection("carts");
 
         // get all menu data
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
             res.send(result);
-            
+
+        });
+
+        // save cart data in database
+        app.post('carts', async (req, res) => {
+            const cartItem = req.body;
+            const result = await cartCollection.insertOne(cartItem);
+            res.send(result);
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
