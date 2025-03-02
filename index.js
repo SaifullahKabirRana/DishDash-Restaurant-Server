@@ -32,6 +32,7 @@ async function run() {
         const menuCollection = client.db("DishDash-Restaurant").collection("menu");
         const reviewsCollection = client.db("DishDash-Restaurant").collection("reviews");
 
+        // get all menu data
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
             res.send(result);
