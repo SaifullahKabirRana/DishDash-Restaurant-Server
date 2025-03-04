@@ -40,11 +40,22 @@ async function run() {
 
         });
 
+        // get cart data for specific user
+        app.get('/carts', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const result = await cartCollection.find(query).toArray();
+            res.send(result);
+
+        });
+
+
         // save cart data in database
-        app.post('carts', async (req, res) => {
+        app.post('/carts', async (req, res) => {
             const cartItem = req.body;
             const result = await cartCollection.insertOne(cartItem);
             res.send(result);
+            console.log(result);
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
