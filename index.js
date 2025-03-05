@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -57,6 +57,14 @@ async function run() {
             res.send(result);
             console.log(result);
         })
+
+        // delete a cart data in database
+        app.delete('/carts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await cartCollection.deleteOne(query);
+            res.send(result);
+        }) 
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
