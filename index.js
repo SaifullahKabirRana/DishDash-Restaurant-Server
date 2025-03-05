@@ -29,9 +29,18 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
 
+        const userCollection = client.db("DishDash-Restaurant").collection("users");
         const menuCollection = client.db("DishDash-Restaurant").collection("menu");
         const reviewsCollection = client.db("DishDash-Restaurant").collection("reviews");
         const cartCollection = client.db("DishDash-Restaurant").collection("carts");
+
+
+        // save user data in db
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
 
         // get all menu data
         app.get('/menu', async (req, res) => {
