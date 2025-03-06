@@ -38,6 +38,13 @@ async function run() {
         // save user data in db
         app.post('/users', async (req, res) => {
             const user = req.body;
+
+            // insert email if user doesn't exists:
+            const query = { email: user?.email };
+            const existingUser = await userCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'User already exists', insertedId: null });
+            }
             const result = await userCollection.insertOne(user);
             res.send(result);
         })
@@ -70,10 +77,10 @@ async function run() {
         // delete a cart data in database
         app.delete('/carts/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await cartCollection.deleteOne(query);
             res.send(result);
-        }) 
+        })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
