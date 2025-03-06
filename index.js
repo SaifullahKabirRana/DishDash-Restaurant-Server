@@ -35,11 +35,17 @@ async function run() {
         const cartCollection = client.db("DishDash-Restaurant").collection("carts");
 
 
+        // get all user data
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result);
+        })
+
         // save user data in db
         app.post('/users', async (req, res) => {
             const user = req.body;
 
-            // insert email if user doesn't exists:
+            // insert email if user doesn't exists
             const query = { email: user?.email };
             const existingUser = await userCollection.findOne(query);
             if (existingUser) {
