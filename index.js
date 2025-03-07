@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -14,6 +15,21 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// verify jwt middleware
+const verifyToken = (req, res, next) => {
+
+    if (!req.headers?.authorization) {
+        return res.status(401).send({ message: 'forbidden access' })
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'forbidden access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xmhoqrm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -35,8 +51,19 @@ async function run() {
         const cartCollection = client.db("DishDash-Restaurant").collection("carts");
 
 
+        // jwt generate
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1h'
+            });
+            res.send({ token });
+        })
+
+
         // get all user data
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyToken, async (req, res) => {
+            // console.log(req.headers);
             const result = await userCollection.find().toArray();
             res.send(result);
         })
@@ -55,7 +82,7 @@ async function run() {
             res.send(result);
         })
 
-        // change user role
+        // update user role
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
