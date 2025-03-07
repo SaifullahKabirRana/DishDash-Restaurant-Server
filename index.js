@@ -19,18 +19,18 @@ app.use(express.json());
 const verifyToken = (req, res, next) => {
 
     if (!req.headers?.authorization) {
-        return res.status(401).send({ message: 'forbidden access' })
+        return res.status(401).send({ message: 'Unauthorized' })
     }
     const token = req.headers.authorization.split(' ')[1];
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-            return res.status(401).send({ message: 'forbidden access' });
+            return res.status(401).send({ message: 'Unauthorized' });
         }
         req.user = decoded;
         next();
     })
-
 }
+
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xmhoqrm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -61,19 +61,31 @@ async function run() {
             res.send({ token });
         })
 
+        // use verify admin after verifyToken
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.user?.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'admin';
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'Forbidden' });
+            }
+            next();
+        }
+
 
         // get all user data
-        app.get('/users', verifyToken, async (req, res) => {
+        app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
             const result = await userCollection.find().toArray();
             res.send(result);
         });
 
-        // check user(admin)
-        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+        // check users(admin)
+        app.get('/users/admin/:email', verifyToken, async (req, res) => {
             const tokenEmail = req.user?.email;
             const email = req.params.email;
             if (tokenEmail !== email) {
-                return res.status(403).send({ message: 'Unauthorized' });
+                return res.status(403).send({ message: 'Forbidden' });
             }
 
             const query = { email: email };
@@ -100,7 +112,7 @@ async function run() {
         })
 
         // update user role
-        app.patch('/users/admin/:id', async (req, res) => {
+        app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -113,7 +125,7 @@ async function run() {
         })
 
         // delete user data
-        app.delete('/users/:id', async (req, res) => {
+        app.delete('/users/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await userCollection.deleteOne(query);
