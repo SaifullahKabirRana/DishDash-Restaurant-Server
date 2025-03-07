@@ -26,9 +26,10 @@ const verifyToken = (req, res, next) => {
         if (err) {
             return res.status(401).send({ message: 'forbidden access' });
         }
-        req.decoded = decoded;
+        req.user = decoded;
         next();
     })
+
 }
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xmhoqrm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -63,9 +64,25 @@ async function run() {
 
         // get all user data
         app.get('/users', verifyToken, async (req, res) => {
-            // console.log(req.headers);
             const result = await userCollection.find().toArray();
             res.send(result);
+        });
+
+        // check user(admin)
+        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+            const tokenEmail = req.user?.email;
+            const email = req.params.email;
+            if (tokenEmail !== email) {
+                return res.status(403).send({ message: 'Unauthorized' });
+            }
+
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === 'admin';
+            }
+            res.send({ admin });
         })
 
         // save user data in db
