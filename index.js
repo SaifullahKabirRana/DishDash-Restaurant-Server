@@ -139,10 +139,18 @@ async function run() {
 
         });
 
-        // save a menu data in db
-        app.post('/menu', async (req, res) => {
+        // save a menu item data in db
+        app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
             const menuItem = req.body;
             const result = await menuCollection.insertOne(menuItem);
+            res.send(result);
+        });
+
+        // delete a menu item data in db
+        app.delete('/menu/:id', verifyToken, verifyAdmin, async (rea, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await menuCollection.deleteOne(query);
             res.send(result);
         })
 
