@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 
 // middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://dish-dash-restaurant.vercel.app'],
     credentials: true,
     optionSuccessStatus: 200,
 }
@@ -138,6 +138,13 @@ async function run() {
             res.send(result);
 
         });
+
+        // save a menu data in db
+        app.post('/menu', async (req, res) => {
+            const menuItem = req.body;
+            const result = await menuCollection.insertOne(menuItem);
+            res.send(result);
+        })
 
         // get cart data for specific user
         app.get('/carts', async (req, res) => {
