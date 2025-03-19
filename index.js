@@ -136,8 +136,15 @@ async function run() {
         app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
             res.send(result);
-
         });
+
+        // get a specific menu data using id
+        app.get('/menu/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await menuCollection.findOne(query);
+            res.send(result);
+        })
 
         // save a menu item data in db
         app.post('/menu', verifyToken, verifyAdmin, async (req, res) => {
@@ -147,12 +154,14 @@ async function run() {
         });
 
         // delete a menu item data in db
-        app.delete('/menu/:id', verifyToken, verifyAdmin, async (rea, res) => {
+        app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await menuCollection.deleteOne(query);
+            console.log(result);
             res.send(result);
         })
+
 
         // get cart data for specific user
         app.get('/carts', async (req, res) => {
