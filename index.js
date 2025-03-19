@@ -141,7 +141,7 @@ async function run() {
         // get a specific menu data using id
         app.get('/menu/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: new ObjectId(id)};
+            const query = { _id: new ObjectId(id) };
             const result = await menuCollection.findOne(query);
             res.send(result);
         })
@@ -152,6 +152,25 @@ async function run() {
             const result = await menuCollection.insertOne(menuItem);
             res.send(result);
         });
+
+        // update menu item data using patch
+        app.patch('/menu/:id', async (req, res) => {
+            const id = req.params.id;
+            const menuItem = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    name: menuItem.name,
+                    category: menuItem.category,
+                    price: menuItem.price,
+                    recipe: menuItem.recipe,
+                    image: menuItem.image
+                }
+            }
+
+            const result = await menuCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
 
         // delete a menu item data in db
         app.delete('/menu/:id', verifyToken, verifyAdmin, async (req, res) => {
