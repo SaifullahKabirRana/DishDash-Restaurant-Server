@@ -51,13 +51,14 @@ async function run() {
         const menuCollection = client.db("DishDash-Restaurant").collection("menu");
         const reviewsCollection = client.db("DishDash-Restaurant").collection("reviews");
         const cartCollection = client.db("DishDash-Restaurant").collection("carts");
+        const paymentCollection = client.db("DishDash-Restaurant").collection("payments");
 
 
         // jwt generate
         app.post('/jwt', async (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-                expiresIn: '1h'
+                expiresIn: '7d'
             });
             res.send({ token });
         })
@@ -211,7 +212,7 @@ async function run() {
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
             const amount = parseInt(price * 100);
-
+            console.log(amount, 'amount inside');
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: 'usd',
@@ -220,6 +221,15 @@ async function run() {
             res.send({
                 clientSecret: paymentIntent.client_secret
             })
+        })
+
+        // save payment data in db
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const paymentResult = await paymentCollection.insertOne(payment);
+            
+            console.log(payment);
+            res.send(paymentResult);
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
