@@ -238,6 +238,18 @@ async function run() {
             res.send({ paymentResult, deleteResult });
         })
 
+        // get payment history for specific user
+        app.get('/payments/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const tokenEmail = req.user?.email;
+            const query = { email: email };
+            if (email !== tokenEmail) {
+                return res.status(403).send({ message: 'Forbidden' });
+            }
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        })
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
 
