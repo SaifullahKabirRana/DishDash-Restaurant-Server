@@ -212,7 +212,7 @@ async function run() {
         app.post('/create-payment-intent', async (req, res) => {
             const { price } = req.body;
             const amount = parseInt(price * 100);
-            console.log(amount, 'amount inside');
+
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: 'usd',
@@ -279,6 +279,40 @@ async function run() {
                 revenue
             })
 
+        });
+
+        // using aggregate pipeline
+        app.get('/order-stats', async (req, res) => {
+            const result = await paymentCollection.aggregate([
+                {
+                    $unwind: '$menuItemIds'
+                },
+                {
+                    $addFields: {
+                        menuItemIds: { $toObjectId: '$menuItemIds' }  // Convert string to ObjectId
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'menu',
+                        localField: 'menuItemIds',
+                        foreignField: '_id',
+                        as: 'menuItems'
+                    }
+                },
+                {
+                    $unwind: '$menuItems'
+                },
+                {
+                    $group: {
+                        _id: '$menuItems.category',
+                        quantity: { $sum: 1 },
+                        totalRevenue: { $sum: '$menuItems.price' }
+                    }
+                }
+            ]).toArray();
+
+            res.send(result);
         })
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
