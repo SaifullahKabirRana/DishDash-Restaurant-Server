@@ -248,6 +248,24 @@ async function run() {
             }
             const result = await paymentCollection.find(query).toArray();
             res.send(result);
+        });
+
+        // get all payment for admin
+        app.get('/allPayments', verifyToken, verifyAdmin, async (req, res) => {
+            const result = await paymentCollection.find().toArray();
+            res.send(result);
+        });
+
+        // Update payment status
+        app.patch('/allPayments/:id', async (req, res) => {
+            const id = req.params.id;
+            const status = req.body;
+            const query = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: status
+            };
+            const result = await paymentCollection.updateOne(query, updateDoc);
+            res.send(result);
         })
 
         // stats or analytics
@@ -282,7 +300,7 @@ async function run() {
         });
 
         // using aggregate pipeline
-        app.get('/order-stats', async (req, res) => {
+        app.get('/order-stats', verifyToken, verifyAdmin, async (req, res) => {
             const result = await paymentCollection.aggregate([
                 {
                     $unwind: '$menuItemIds'
@@ -308,6 +326,14 @@ async function run() {
                         _id: '$menuItems.category',
                         quantity: { $sum: 1 },
                         totalRevenue: { $sum: '$menuItems.price' }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        category: '$_id',
+                        quantity: '$quantity',
+                        totalRevenue: '$totalRevenue'
                     }
                 }
             ]).toArray();
