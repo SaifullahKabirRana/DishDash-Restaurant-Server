@@ -339,7 +339,46 @@ async function run() {
             ]).toArray();
 
             res.send(result);
-        })
+        });
+
+        // user stats (specific user)
+        app.get('/user-stats/:email', verifyToken, async (req, res) => {
+            const email = req.params.email;
+            const tokenEmail = req.user?.email;
+            const query = { email: email };
+            if (email !== tokenEmail) {
+                return res.status(403).send({ message: 'Forbidden' });
+            }
+            const orders = await paymentCollection.countDocuments(query); // use countDocuments for specific user data
+            const result = await paymentCollection.aggregate([
+                {
+                    $match: query
+                },
+                {
+                    $project: {
+                        price: 1,
+                        menuCount: { $size: '$menuItemIds' }
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalPayments: { $sum: '$price' },
+                        totalMenuItems: { $sum: '$menuCount' }
+                    }
+                }
+
+            ]).toArray();
+            const totalPayments = result.length > 0 ? result[0].totalPayments : 0;
+            const totalMenuItems = result.length > 0 ? result[0].totalMenuItems : 0;
+
+            res.send({
+                orders,
+                totalPayments,
+                totalMenuItems
+            })
+
+        });
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
