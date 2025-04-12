@@ -5,6 +5,19 @@ const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// for send email
+const nodemailer = require("nodemailer");
+// transporter create
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+
+
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -234,7 +247,26 @@ async function run() {
                     $in: payment.cartIds.map(id => new ObjectId(id))
                 }
             };
-            const deleteResult = await cartCollection.deleteMany(query)
+            const deleteResult = await cartCollection.deleteMany(query);
+
+            // send user email about payment confirmation
+            mg.messages.create(process.env.MAIL_SENDING_DOMAIN, {
+                from: "DishDash <mailgun@sandbox69292c9725fc4529b92d379306a84a5c.mailgun.org>",
+                to: ["dishdashr@gmail.com"],
+                subject: "DishDash Order confirmation",
+                text: "Testing some Mailgun awesomness!",
+                html: `
+                <div style="font-family: Arial, sans-serif; color: #333;">
+                    <h2>Dear ${payment.name},</h2>
+                    <p>Thank you for your order!</p>
+                    <p>Your <strong>Transaction ID</strong>: ${payment.transactionId}</p>
+                    <p>We would love to hear your feedback about our food. ❤️</p>
+                </div>
+                `
+            })
+                .then(msg => console.log(msg, 'right code')) // logs response data
+                .catch(err => console.error(err, 'wrong code')); // logs any error
+
             res.send({ paymentResult, deleteResult });
         })
 
