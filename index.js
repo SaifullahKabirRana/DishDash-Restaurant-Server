@@ -250,11 +250,10 @@ async function run() {
             const deleteResult = await cartCollection.deleteMany(query);
 
             // send user email about payment confirmation
-            mg.messages.create(process.env.MAIL_SENDING_DOMAIN, {
-                from: "DishDash <mailgun@sandbox69292c9725fc4529b92d379306a84a5c.mailgun.org>",
-                to: ["dishdashr@gmail.com"],
-                subject: "DishDash Order confirmation",
-                text: "Testing some Mailgun awesomness!",
+            const mailOptions = {
+                from: `"DishDash" <${process.env.EMAIL_USER}>`,
+                to: payment.email,
+                subject: "DishDash Order Confirmation",
                 html: `
                 <div style="font-family: Arial, sans-serif; color: #333;">
                     <h2>Dear ${payment.name},</h2>
@@ -263,9 +262,10 @@ async function run() {
                     <p>We would love to hear your feedback about our food. ❤️</p>
                 </div>
                 `
-            })
-                .then(msg => console.log(msg, 'right code')) // logs response data
-                .catch(err => console.error(err, 'wrong code')); // logs any error
+            };
+            transporter.sendMail(mailOptions)
+                .then(info => console.log("Email sent:", info.messageId))
+                .catch(error => console.error("Email error", error));
 
             res.send({ paymentResult, deleteResult });
         })
